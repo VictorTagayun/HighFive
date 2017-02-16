@@ -1,7 +1,9 @@
 # HighFive
+
 Cozmo uses hand gesture recognition to recognize when you hold up two fingers to "high-five" him. He holds up his lift and waits for you to tap. He gets happy when you do and annoyed if you don't.
 
 # Dependencies
+
 The modules required in addition to the `Cozmo` module are:
 
 * numpy
