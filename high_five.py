@@ -4,17 +4,15 @@ import cozmo
 import asyncio
 import math
 from cozmo.util import distance_mm, speed_mmps
-from Common.woc import WOC
 
 '''
-@class HandGestureRecognition
-Cozmo recognizes your hand and high-fives with you, getting happy if you high-five and annoyed if you don't.
+@class HighFive
+Cozmo recognizes your hand and holds up his lift to high-five you, getting happy if you do and annoyed if you don't.
 @author - Wizards of Coz
 '''
 
-class HandGestureRecognition(WOC):    
+class HighFive():    
     def __init__(self):
-        WOC.__init__(self)
         self.cozmo_idle = True                          # Cozmo state - idle or waiting for user to high-five
         self.frames_hand_visible_thresh = 20            # Number of frames Cozmo sees a hand continuously before acknowledging it
         self.frames_wait_for_high_five_thresh = 35      # Number of frames Cozmo waits for a user to high-five
@@ -145,5 +143,4 @@ class HandGestureRecognition(WOC):
             await asyncio.sleep(0)
 
 if __name__ == '__main__':
-    HandGestureRecognition()
-    
+    HighFive()
