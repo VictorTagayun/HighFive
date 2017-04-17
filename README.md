@@ -7,10 +7,7 @@ Cozmo uses hand gesture recognition to recognize when you hold up two fingers to
 The modules required in addition to the `Cozmo` module are:
 
 * numpy
-* Common
 * OpenCV
-
-Common is a package included in the Git repo: https://github.com/Wizards-of-Coz/Common
 
 I have used OpenCV3 with the project. You will need to install OpenCV following the instructions on their website.
 
