@@ -7,34 +7,38 @@ from cozmo.util import distance_mm, speed_mmps
 
 '''
 @class HighFive
-Cozmo recognizes your hand and holds up his lift to high-five you, getting happy if you do and annoyed if you don't.
+Cozmo recognizes your hand and holds up his lift to high five you, getting happy if you do and annoyed if you don't.
 @author - Wizards of Coz
 '''
 
 class HighFive():    
     def __init__(self):
-        self.cozmo_idle = True                          # Cozmo state - idle or waiting for user to high-five
+        self.cozmo_idle = True                          # Cozmo state - idle or waiting for user to high five
         self.frames_hand_visible_thresh = 20            # Number of frames Cozmo sees a hand continuously before acknowledging it
-        self.frames_wait_for_high_five_thresh = 35      # Number of frames Cozmo waits for a user to high-five
-        self.norm_thresh = 0.85                         # Threshold for successful high-five         
+        self.frames_wait_for_high_five_thresh = 35      # Number of frames Cozmo waits for a user to high five
+        self.norm_thresh = 0.85                         # Threshold for successful high five         
         self.cnt1 = 0
         self.cnt2 = 0
         self.blur = 5
         self.kernel = 11
 
+        #Cozmo's view window
         cv2.namedWindow('Thresholded')
         cv2.createTrackbar('blur', 'Thresholded', 1, 5, self.update_values)
         cv2.createTrackbar('kernel', 'Thresholded', 1, 9, self.update_values)
 
+        #Connect Cozmo and start
         self.robot = None
         cozmo.connect(self.run)
 
-    def update_values(self, x):             
+    def update_values(self, x):   
+        #Update blur and kernel values according to user settings to increase accuracy of recognizing hand          
         self.blur = 2*(cv2.getTrackbarPos('blur', 'Thresholded')) + 1
         self.kernel = 2*(cv2.getTrackbarPos('kernel', 'Thresholded')) + 1
 
     
     def wait_for_high_five(self, thresh_img):
+        #Check if user tapped Cozmo using Cozmo's view - every pixel in the frame is checked to see if how much of his view was blocked
         count = 0
         total = 0
         rows, cols = thresh_img.shape
@@ -47,20 +51,24 @@ class HighFive():
     
 
     async def see_hand(self):
+        #Cozmo recognizes hand and hold up his lift
         await self.robot.play_anim_trigger(cozmo.anim.Triggers.AcknowledgeFaceNamed).wait_for_completed()
         await self.robot.set_head_angle(cozmo.util.Angle(degrees=45), in_parallel = True).wait_for_completed()
         await self.robot.drive_straight(distance_mm(20), speed_mmps(100), in_parallel = True).wait_for_completed()
         await self.robot.set_lift_height(1, accel=100.0, max_speed=100.0, duration=0.0, in_parallel = True).wait_for_completed()
 
     async def high_five_success(self):
+        #Cozmo was high fived
         await self.robot.play_anim_trigger(cozmo.anim.Triggers.ReactToBlockPickupSuccess).wait_for_completed()
         await self.go_idle()
 
     async def high_five_fail(self):
+        #Cozmo gets annoyed when the user doesn't high five
         await self.robot.play_anim_trigger(cozmo.anim.Triggers.ReactToBlockRetryPickup).wait_for_completed()
         await self.go_idle()
 
     async def go_idle(self):
+        #Cozmo wait for recognizing two fingers of a hand state
         self.cozmo_idle = True
         self.cnt1 = 0
         self.cnt2 = 0
@@ -68,14 +76,14 @@ class HighFive():
         await self.robot.set_lift_height(0, accel=10.0, max_speed=10.0, duration=0.0, in_parallel = True).wait_for_completed()
 
     async def on_new_camera_image(self, event, *, image:cozmo.world.CameraImage, **kw):
+        #Check for hand at every image frame received
         img = np.array(image.raw_image)
         cv2.rectangle(img, (90,50), (230,190), (0,0,0), 1)
         crop_img = img[50:190, 90:230]
         gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (self.blur,self.blur), 0)
         thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, self.kernel, 2)
-        #_, thresh = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU )
-
+0
         cv2.imshow('Thresholded', thresh)
         cv2.imshow('HighFiveCozmo', img)
         k = cv2.waitKey(10)
@@ -83,6 +91,7 @@ class HighFive():
             exit()
                 
         if self.cozmo_idle == True:
+            #hand recognition using convex hull
             image, contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
             cnt = max(contours, key = lambda x: cv2.contourArea(x))
             hull = cv2.convexHull(cnt)
@@ -130,6 +139,7 @@ class HighFive():
                 self.event_handler = self.robot.add_event_handler(cozmo.world.EvtNewCameraImage, self.on_new_camera_image)             
 
     async def set_up_cozmo(self, conn):
+        #start up code
         asyncio.set_event_loop(conn._loop)
         self.robot = await conn.wait_for_robot()
         self.robot.camera.image_stream_enabled = True
